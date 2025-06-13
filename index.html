@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Historial de Apuestas - RushapoBets</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #000000, #FFD700);
+      min-height: 100vh;
+      overflow-x: hidden;
+      animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    header img {
+      width: 60px;
+      height: 60px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    h1 {
+      font-size: 26px;
+      color: white;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .controls {
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .controls input[type="number"] {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #FFD700;
+      background-color: #1a1a1a;
+      color: white;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #FFD700;
+      color: black;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .controls button:hover {
+      background-color: #e0c200;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background-color: rgba(0, 0, 0, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1000px;
+      color: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #FFD700;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #FFD700;
+      color: black;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 5px;
+      font-family: 'Poppins', sans-serif;
+      background-color: #1a1a1a;
+      color: white;
+      border: 1px solid #FFD700;
+    }
+
+    input[title] {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .delete-button {
+      background-color: crimson;
+      border: none;
+      padding: 6px 10px;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .delete-button:hover {
+      background-color: darkred;
+    }
+
+    .total-container {
+      text-align: right;
+      color: black;
+      font-size: 18px;
+      margin-top: 15px;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .controls input,
+      .controls button {
+        width: 100%;
+      }
+
+      .total-container {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Logo">
+    <h1>RushapoBets - Historial de Apuestas</h1>
+  </header>
+
+</body>
+</html>
+
+  </header>
+
+  <div class="controls">
+    <label for="bankInicial">Bank Inicial: $</label>
+    <input type="number" id="bankInicial" value="100000" min="0" step="0.01" onchange="resetBank()">
+    <button onclick="agregarFila()">Agregar Apuesta</button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Casa</th>
+          <th>Liga</th>
+          <th>Mi Apuesta</th>
+          <th>Tipo</th>
+          <th>Modalidad</th>
+          <th>Resultado</th>
+          <th>Stake</th>
+          <th>Monto</th>
+          <th>Cuota</th>
+          <th>Total</th>
+          <th>Ganancia</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="total-container">
+    <strong>BANK TOTAL ACTUAL: $<span id="bankTotal">100000.00</span></strong>
+  </div>
+
+  <script>
+    function guardarDatos() {
+      const filas = Array.from(document.querySelectorAll("#tableBody tr")).map(fila => {
+        return Array.from(fila.querySelectorAll("input, select")).map(input => input.value);
+      });
+      localStorage.setItem("apuestas", JSON.stringify(filas));
+      localStorage.setItem("bank", document.getElementById("bankInicial").value);
+    }
+
+    function cargarDatos() {
+      const guardadas = JSON.parse(localStorage.getItem("apuestas")) || [];
+      document.getElementById("bankInicial").value = localStorage.getItem("bank") || "100000";
+      guardadas.forEach(valores => agregarFila(valores));
+    }
+
+    function resetBank() {
+      actualizarBank();
+      guardarDatos();
+    }
+
+    function agregarFila(valores = []) {
+      const table = document.getElementById("tableBody");
+      const row = document.createElement("tr");
+
+      const campos = [
+        'date', 'text', 'text', 'text',
+        ['Simple', 'Combinada'],
+        ['Pre', 'En Vivo'],
+        ['Ganada', 'Perdida'],
+        'number', 'number', 'number'
+      ];
+
+      let i = 0;
+      campos.forEach((campo, index) => {
+        const td = document.createElement("td");
+        if (Array.isArray(campo)) {
+          const select = document.createElement("select");
+          campo.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.text = opt;
+            select.appendChild(option);
+          });
+          if (valores[i]) select.value = valores[i];
+          select.addEventListener("input", () => {
+            calcular(row);
+            guardarDatos();
+          });
+          td.appendChild(select);
+        } else {
+          const input = document.createElement("input");
+          input.type = campo;
+          input.value = valores[i] || "";
+          if (campo === "number") {
+            input.min = "0";
+            input.step = "0.01";
+          }
+          if (index === 3) {
+            input.setAttribute("title", valores[i] || "");
+            input.addEventListener("input", () => {
+              input.setAttribute("title", input.value);
+              guardarDatos();
+            });
+          } else {
+            input.addEventListener("input", () => {
+              calcular(row);
+              guardarDatos();
+            });
+          }
+          td.appendChild(input);
+        }
+        row.appendChild(td);
+        i++;
+      });
+
+      const tdTotal = document.createElement("td");
+      tdTotal.textContent = "$0.00";
+      row.appendChild(tdTotal);
+
+      const tdGanancia = document.createElement("td");
+      tdGanancia.textContent = "$0.00";
+      row.appendChild(tdGanancia);
+
+      const tdDelete = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.textContent = "Borrar";
+      btn.className = "delete-button";
+      btn.onclick = () => {
+        row.remove();
+        actualizarBank();
+        guardarDatos();
+      };
+      tdDelete.appendChild(btn);
+      row.appendChild(tdDelete);
+
+      table.appendChild(row);
+      calcular(row);
+    }
+
+    function calcular(row) {
+      const resultado = row.cells[6].querySelector("select").value;
+      const monto = parseFloat(row.cells[8].querySelector("input").value) || 0;
+      const cuota = parseFloat(row.cells[9].querySelector("input").value) || 0;
+
+      const total = resultado === "Ganada" ? monto * cuota : 0;
+      const ganancia = total - monto;
+
+      row.cells[10].textContent = "$" + total.toFixed(2);
+      row.cells[11].textContent = "$" + ganancia.toFixed(2);
+
+      actualizarBank();
+    }
+
+    function actualizarBank() {
+      let base = parseFloat(document.getElementById("bankInicial").value) || 0;
+      document.querySelectorAll("#tableBody tr").forEach(row => {
+        const ganancia = parseFloat(row.cells[11].textContent.replace("$", "")) || 0;
+        base += ganancia;
+      });
+      document.getElementById("bankTotal").textContent = base.toFixed(2);
+    }
+
+    cargarDatos();
+  </script>
+</body>
+</html>

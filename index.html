@@ -170,6 +170,21 @@
         text-align: left;
       }
     }
+
+    .expandible {
+      max-height: 40px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: max-height 0.3s ease;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .expandible.expanded {
+      max-height: 200px;
+      white-space: normal;
+      overflow: auto;
+    }
   </style>
 </head>
 <body>
@@ -339,6 +354,16 @@
     }
 
     cargarDatos();
+    
+  </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("td.expandible").forEach(td => {
+        td.addEventListener("click", () => {
+          td.classList.toggle("expanded");
+        });
+      });
+    });
   </script>
 </body>
 </html>

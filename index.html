@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Historial de Apuestas - RushapoBets</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -28,15 +29,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 10px;
       margin-bottom: 30px;
-      text-align: center;
     }
 
     header img {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       animation: pulse 2s infinite;
     }
 
@@ -47,7 +47,7 @@
     }
 
     h1 {
-      font-size: 26px;
+      font-size: 22px;
       color: white;
       margin: 0;
       font-weight: 600;
@@ -128,13 +128,6 @@
       border: 1px solid #FFD700;
     }
 
-    input[title] {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
     .delete-button {
       background-color: crimson;
       border: none;
@@ -156,34 +149,20 @@
     }
 
     @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+      }
       .controls {
         flex-direction: column;
         align-items: flex-start;
       }
-
       .controls input,
       .controls button {
         width: 100%;
       }
-
       .total-container {
         text-align: left;
       }
-    }
-
-    .expandible {
-      max-height: 40px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: max-height 0.3s ease;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    .expandible.expanded {
-      max-height: 200px;
-      white-space: normal;
-      overflow: auto;
     }
   </style>
 </head>
@@ -193,15 +172,11 @@
     <h1>RushapoBets - Historial de Apuestas</h1>
   </header>
 
-</body>
-</html>
-
-  </header>
-
   <div class="controls">
     <label for="bankInicial">Bank Inicial: $</label>
     <input type="number" id="bankInicial" value="100000" min="0" step="0.01" onchange="resetBank()">
     <button onclick="agregarFila()">Agregar Apuesta</button>
+    <button onclick="exportarExcel()">Exportar a Excel</button>
   </div>
 
   <div class="table-container">
@@ -288,18 +263,10 @@
             input.min = "0";
             input.step = "0.01";
           }
-          if (index === 3) {
-            input.setAttribute("title", valores[i] || "");
-            input.addEventListener("input", () => {
-              input.setAttribute("title", input.value);
-              guardarDatos();
-            });
-          } else {
-            input.addEventListener("input", () => {
-              calcular(row);
-              guardarDatos();
-            });
-          }
+          input.addEventListener("input", () => {
+            calcular(row);
+            guardarDatos();
+          });
           td.appendChild(input);
         }
         row.appendChild(td);
@@ -353,17 +320,33 @@
       document.getElementById("bankTotal").textContent = base.toFixed(2);
     }
 
-    cargarDatos();
-    
-  </script>
-    <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll("td.expandible").forEach(td => {
-        td.addEventListener("click", () => {
-          td.classList.toggle("expanded");
-        });
+    function exportarExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws_data = [[
+        "Fecha", "Casa", "Liga", "Mi Apuesta", "Tipo", "Modalidad", "Resultado", "Stake", "Monto", "Cuota", "Total", "Ganancia"
+      ]];
+
+      const rows = document.querySelectorAll("#tableBody tr");
+      rows.forEach(row => {
+        const datos = Array.from(row.querySelectorAll("input, select"), el => el.value);
+        const total = row.cells[10].textContent.replace("$", "");
+        const ganancia = row.cells[11].textContent.replace("$", "");
+        ws_data.push([...datos, total, ganancia]);
       });
-    });
+
+      const bankInicial = document.getElementById("bankInicial").value;
+      const bankTotal = document.getElementById("bankTotal").textContent;
+
+      ws_data.push([]);
+      ws_data.push(["Bank Inicial", bankInicial]);
+      ws_data.push(["Bank Total Actual", bankTotal]);
+
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      XLSX.utils.book_append_sheet(wb, ws, "Historial");
+      XLSX.writeFile(wb, "historial_apuestas.xlsx");
+    }
+
+    cargarDatos();
   </script>
 </body>
 </html>
